@@ -1,43 +1,105 @@
 //v2
 
 function createTextNode(text) {
-    return {
-      type: "TEXT_ELEMENT",
-      props: {
-        nodeValue: text,
-        children: [],
-      },
-    };
-  }
+  return {
+    type: "TEXT_ELEMENT",
+    props: {
+      nodeValue: text,
+      children: [],
+    },
+  };
+}
+
+function createElement(type, props, ...children) {
+  return {
+    type,
+    props: {
+      ...props,
+      children: children.map((child) => {
+        return typeof child === "string" ? createTextNode(child) : child;
+      }),
+    },
+  };
+}
+
+function render(el, container) {
+  netfiberOfUnit = {
+    dom: container,
+    props: {
+      children: [el],
+    },
+  };
+
   
-  function createElement(type, props, ...children) {
-    return {
-      type,
-      props: {
-        ...props,
-        children: children.map((child) => {
-          return typeof child === "string" ? createTextNode(child) : child;
-        }),
-      },
-    };
+}
+//当前要执行的任务
+let netfiberOfUnit = null;
+function workLoop(deadline) {
+  let shouldYield = false;
+  while (!shouldYield) {
+    netfiberOfUnit = perFormfiberOfUnit(netfiberOfUnit);
+    shouldYield = deadline.timeRemaining() < 1;
   }
-  
-  function render(el, container) {
-    const dom =
-      el.type === "TEXT_ELEMENT" ? document.createTextNode("") : document.createElement(el.type);
-    Object.keys(el.props).forEach((key) => {
+  function createDom(type){
+    return  type === "TEXT_ELEMENT"
+    ? document.createTextNode("")
+    : document.createElement(type);
+  }
+  function updateProps(dom,props){
+    Object.keys(props).forEach((key) => {
       if (key !== "children") {
-        dom[key] = el.props[key];
+        dom[key] = props[key];
       }
     });
-    const children = el.props.children;
-    children.forEach((child) => {
-      render(child, dom);
+  }
+  function initChildren(fiber){
+    const children = fiber.props.children;
+    let prevChild = null;
+    children.forEach((child, index) => {
+      const newfiber = {
+        type: child.type,
+        props: child.props,
+        child: null,
+        parent: fiber,
+        sibling: null,
+        dom: null,
+      };
+      if (index === 0) {
+        fiber.child = newfiber;
+      } else {
+        prevChild.sibling = newfiber;
+      }
+      prevChild = newfiber;
     });
-    container.append(dom);
   }
-  const React={
-    render,
-    createElement
+  function perFormfiberOfUnit(fiber) {
+    console.log(fiber.dom,'jjj')
+    // 1.创建dom
+    if (!fiber.dom) {
+      const dom = (fiber.dom =createDom(fiber.type))
+       
+      fiber.parent.dom.append(dom);
+
+      // 2.处理props
+updateProps(dom,fiber.props)
+    }
+
+    // 3.将树转换为链表
+initChildren(fiber)
+    // 4.返回下一个要执行的任务
+    if (fiber.child) {
+      return fiber.child;
+    }
+    if (fiber.sibling) {
+      return fiber.sibling;
+    }
+    return fiber.parent?.sibling;
   }
-  export default React
+  requestIdleCallback(workLoop);
+}
+requestIdleCallback(workLoop);
+const React = {
+  render,
+  createElement,
+};
+export default React;
