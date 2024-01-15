@@ -16,7 +16,9 @@ function createElement(type, props, ...children) {
     props: {
       ...props,
       children: children.map((child) => {
-        return typeof child === "string" ? createTextNode(child) : child;
+        const isTextNode=typeof child==="string" ||typeof child ==="number"
+        console.log(child,isTextNode,'kkk')
+        return isTextNode ? createTextNode(child) : child;
       }),
     },
   };
@@ -51,19 +53,26 @@ commitRoot()
 }
 requestIdleCallback(workLoop);
 function commitRoot(){
-  console.log(root,'root')
+
   commitWork(root.child)
   root=null
 }
 function commitWork(fiber){
-  console.log(fiber)
   if(!fiber) return
-  fiber.parent.dom.append(fiber.dom)
+  let fiberParent=fiber.parent
+  while(!fiberParent.dom){
+    fiberParent=fiberParent.parent
+  }
+  if(fiber.dom){
+   fiberParent.dom.append(fiber.dom)
+  }
+
   commitWork(fiber.child);
   commitWork(fiber.sibling)
 }
 
 function createDom(type){
+
   return  type === "TEXT_ELEMENT"
   ? document.createTextNode("")
   : document.createElement(type);
@@ -75,8 +84,7 @@ function updateProps(dom,props){
     }
   });
 }
-function initChildren(fiber){
-  const children = fiber.props.children;
+function initChildren(fiber,children){
   let prevChild = null;
   children.forEach((child, index) => {
     const newfiber = {
@@ -95,7 +103,13 @@ function initChildren(fiber){
     prevChild = newfiber;
   });
 }
-function perFormfiberOfUnit(fiber) {
+function updateFunctionComponent(fiber){
+  const children=[fiber.type(fiber.props)]
+
+  // 3.将树转换为链表
+initChildren(fiber,children)
+}
+function updateHostComponent(fiber){
   // 1.创建dom
   if (!fiber.dom) {
     const dom = (fiber.dom =createDom(fiber.type))
@@ -104,9 +118,21 @@ function perFormfiberOfUnit(fiber) {
     // 2.处理props
 updateProps(dom,fiber.props)
   }
+  const children=fiber.props.children
 
   // 3.将树转换为链表
-initChildren(fiber)
+initChildren(fiber,children)
+
+}
+function perFormfiberOfUnit(fiber) {
+  const isFunctionComponent=typeof fiber.type==="function";
+
+  if(isFunctionComponent){
+    updateFunctionComponent(fiber)
+  }else{
+    updateHostComponent(fiber)
+  }
+
   // 4.返回下一个要执行的任务
   if (fiber.child) {
     return fiber.child;
