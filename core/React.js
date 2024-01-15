@@ -23,26 +23,45 @@ function createElement(type, props, ...children) {
 }
 
 function render(el, container) {
- let netfiberOfUnit = {
+  nextfiberOfUnit = {
     dom: container,
     props: {
       children: [el],
     },
   };
-  function workLoop(deadline) {
-    let shouldYield = false;
-    while (!shouldYield && netfiberOfUnit) {
-      netfiberOfUnit = perFormfiberOfUnit(netfiberOfUnit);
-      shouldYield = deadline.timeRemaining() < 1;
-    }
-   
-    requestIdleCallback(workLoop);
-  }
-  requestIdleCallback(workLoop);
+
+root=nextfiberOfUnit
   
 }
 //当前要执行的任务
+let root=null
+let nextfiberOfUnit=null
+function workLoop(deadline) {
+  let shouldYield = false;
+  while (!shouldYield && nextfiberOfUnit) {
+    nextfiberOfUnit = perFormfiberOfUnit(nextfiberOfUnit);
+    shouldYield = deadline.timeRemaining() < 1;
+  }
+ if(!nextfiberOfUnit && root){
+  //链表处理完了
+commitRoot()
 
+ }
+  requestIdleCallback(workLoop);
+}
+requestIdleCallback(workLoop);
+function commitRoot(){
+  console.log(root,'root')
+  commitWork(root.child)
+  root=null
+}
+function commitWork(fiber){
+  console.log(fiber)
+  if(!fiber) return
+  fiber.parent.dom.append(fiber.dom)
+  commitWork(fiber.child);
+  commitWork(fiber.sibling)
+}
 
 function createDom(type){
   return  type === "TEXT_ELEMENT"
@@ -77,12 +96,10 @@ function initChildren(fiber){
   });
 }
 function perFormfiberOfUnit(fiber) {
-  console.log(fiber.dom,'jjj')
   // 1.创建dom
   if (!fiber.dom) {
     const dom = (fiber.dom =createDom(fiber.type))
      
-    fiber.parent.dom.append(dom);
 
     // 2.处理props
 updateProps(dom,fiber.props)
@@ -104,6 +121,7 @@ function findNextSiblingOfparent(fiber){
     return fiber.parent.sibling;
   }else if(fiber.parent) return findNextSiblingOfparent(fiber.parent)
 }
+
 const React = {
   render,
   createElement,
