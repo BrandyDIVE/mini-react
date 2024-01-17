@@ -1,9 +1,13 @@
 import React from './core/React.js'
-function handleClick(){
-    console.log("click")
-}
+let count=10
+
 function Counter({num}){
-    return <div>count:{num}
+    function handleClick(){
+        console.log("click")
+        count++
+        React.update()
+    }
+    return <div>count:{count}
     <button onClick={handleClick}>click</button>
     </div>
 }
