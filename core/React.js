@@ -178,6 +178,10 @@ function reconcileChildren(fiber, children) {
     }
     prevChild = newfiber;
   });
+  while(oldFiber){
+    deletions.push(oldFiber)
+    oldFiber=oldFiber.sibling
+  }
 }
 function updateFunctionComponent(fiber) {
   const children = [fiber.type(fiber.props)];

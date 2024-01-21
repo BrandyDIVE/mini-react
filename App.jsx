@@ -3,9 +3,12 @@ import React from './core/React.js'
 let showBar=false
 function Counter(){
   function Foo(){
-    return <div>foo</div>
+    return <div>foo
+        <div>child</div>
+        <div>child2</div>
+    </div>
   }
-    const bar=<p>bar</p>
+    const bar=<div>bar</div>
     function handleShowBar(){
         showBar=!showBar
         React.update()
