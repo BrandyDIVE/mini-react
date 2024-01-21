@@ -39,6 +39,7 @@ function render(el, container) {
 let wipRoot = null;
 let currentRoot = null;
 let nextfiberOfUnit = null;
+let deletions=[]
 function workLoop(deadline) {
   let shouldYield = false;
   while (!shouldYield && nextfiberOfUnit) {
@@ -53,9 +54,23 @@ function workLoop(deadline) {
 }
 requestIdleCallback(workLoop);
 function commitRoot() {
+  deletions.forEach(commitDeletion)
   commitWork(wipRoot.child);
   currentRoot = wipRoot;
   wipRoot = null;
+  deletions=[]
+}
+function commitDeletion(fiber){
+  if(fiber.dom){
+    let fiberParent = fiber.parent;
+    while (!fiberParent.dom) {
+      fiberParent = fiberParent.parent;
+    }
+    fiberParent.dom.removeChild(fiber.dom)
+  }else{
+    //当删除的是function component的情况
+    commitDeletion(fiber.child)
+  }
 }
 function commitWork(fiber) {
   if (!fiber) return;
@@ -119,7 +134,7 @@ function updateProps(dom, nextProps,prevProps) {
     }
   })
 }
-function initChildren(fiber, children) {
+function reconcileChildren(fiber, children) {
   let oldFiber=fiber.alternate?.child
   let prevChild = null;
   children.forEach((child, index) => {
@@ -148,6 +163,10 @@ function initChildren(fiber, children) {
         dom: null,
         effectTag:"placement"
       };
+      if(oldFiber){
+        deletions.push(oldFiber)
+      }
+      
     }
  if(oldFiber){
   oldFiber=oldFiber.sibling
@@ -164,7 +183,7 @@ function updateFunctionComponent(fiber) {
   const children = [fiber.type(fiber.props)];
 
   // 3.将树转换为链表
-  initChildren(fiber, children);
+  reconcileChildren(fiber, children);
 }
 function updateHostComponent(fiber) {
   // 1.创建dom
@@ -177,7 +196,7 @@ function updateHostComponent(fiber) {
   const children = fiber.props.children;
 
   // 3.将树转换为链表
-  initChildren(fiber, children);
+  reconcileChildren(fiber, children);
 }
 function perFormfiberOfUnit(fiber) {
   const isFunctionComponent = typeof fiber.type === "function";

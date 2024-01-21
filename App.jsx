@@ -1,24 +1,26 @@
 import React from './core/React.js'
-let count=10
 
-function Counter({num}){
-    function handleClick(){
-        console.log("click")
-        count++
+let showBar=false
+function Counter(){
+  function Foo(){
+    return <div>foo</div>
+  }
+    const bar=<p>bar</p>
+    function handleShowBar(){
+        showBar=!showBar
         React.update()
     }
-    return <div>count:{count}
-    <button onClick={handleClick}>click</button>
+    return <div>Counter
+        <div>{showBar?bar:<Foo></Foo>}</div>
+    <button onClick={handleShowBar}>showBar</button>
     </div>
 }
-function CounterContainer(){
-    return <Counter></Counter>
-}
+
 function App(){
     return (<div>
     <h1>Hello, brandy!</h1>
     <div>This is a paragraph</div>
-    <Counter num={10}></Counter>
+    <Counter ></Counter>
     {/* <Counter num={20}></Counter> */}
 
     {/* <CounterContainer></CounterContainer> */}
