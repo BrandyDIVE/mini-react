@@ -1,52 +1,30 @@
-import React from './core/React.js'
+import React from "./core/React.js";
 
-let countFoo=false
-function Foo(){
-console.log("foo rerun")
-const update= React.update()
-    function handleclick(){
-        countFoo++
-       update()
-    }
-    return (<div><h1>foo</h1>
-         {countFoo}
-    <button onClick={handleclick}>click</button>
-
-    </div>)
-}
-let countBar=false
-function Bar(){
-console.log("bar rerun")
-const update= React.update()
-    function handleclick(){
-        countBar++
-        update()
-    }
-    return (<div><h1>bar </h1>
-         {countBar}
-    <button onClick={handleclick}>click</button>
+function Foo() {
+  const [count, setCount] = React.useState(10);
+  const [bar, setBar] = React.useState("bar");
+  function handleclick() {
+    setCount((c)=>c+1)
+    setBar((s)=>s+"bar")
+  }
+  return (
+    <div>
+      <h1>foo</h1>
+      {count}
+      <div> {bar}</div>
+     
+      <button onClick={handleclick}>click</button>
     </div>
-    )
-}
-let countRoot=1
-function App(){
-    console.log("app rerun")
-    const update= React.update()
-    function handleClick(){
-        countRoot++
-       update()
-    }
-    return (<div>
-hello-brandy count:{countRoot}
-<button onClick={handleClick}>click</button>
-  <Foo></Foo>
-  <Bar></Bar>
-    {/* <Counter num={20}></Counter> */}
-
-    {/* <CounterContainer></CounterContainer> */}
-</div>)
+  );
 }
 
+function App() {
+  return (
+    <div>
+      hello-brandy 
+      <Foo></Foo>
+    </div>
+  );
+}
 
-
-export default App
+export default App;
