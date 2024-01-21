@@ -18,7 +18,7 @@ function createElement(type, props, ...children) {
       children: children.map((child) => {
         const isTextNode =
           typeof child === "string" || typeof child === "number";
-        console.log(child, isTextNode, "kkk");
+      
         return isTextNode ? createTextNode(child) : child;
       }),
     },
@@ -26,27 +26,31 @@ function createElement(type, props, ...children) {
 }
 
 function render(el, container) {
-  nextfiberOfUnit = {
+  nextWorkOfUnit = {
     dom: container,
     props: {
       children: [el],
     },
   };
 
-  wipRoot = nextfiberOfUnit;
+  wipRoot = nextWorkOfUnit;
 }
 //当前要执行的任务
 let wipRoot = null;
 let currentRoot = null;
-let nextfiberOfUnit = null;
+let nextWorkOfUnit = null;
 let deletions = [];
+let wipFiber = null;
 function workLoop(deadline) {
   let shouldYield = false;
-  while (!shouldYield && nextfiberOfUnit) {
-    nextfiberOfUnit = perFormfiberOfUnit(nextfiberOfUnit);
+  while (!shouldYield && nextWorkOfUnit) {
+    nextWorkOfUnit = perFormfiberOfUnit(nextWorkOfUnit);
+    if(wipRoot?.sibling?.type===nextWorkOfUnit?.type){
+      nextWorkOfUnit=undefined
+    }
     shouldYield = deadline.timeRemaining() < 1;
   }
-  if (!nextfiberOfUnit && wipRoot) {
+  if (!nextWorkOfUnit && wipRoot) {
     //链表处理完了
     commitRoot();
   }
@@ -175,10 +179,9 @@ function reconcileChildren(fiber, children) {
     } else {
       prevChild.sibling = newfiber;
     }
-    if(newfiber){
+    if (newfiber) {
       prevChild = newfiber;
     }
-   
   });
   while (oldFiber) {
     deletions.push(oldFiber);
@@ -186,6 +189,8 @@ function reconcileChildren(fiber, children) {
   }
 }
 function updateFunctionComponent(fiber) {
+  wipFiber = fiber;
+
   const children = [fiber.type(fiber.props)];
 
   // 3.将树转换为链表
@@ -228,13 +233,20 @@ function findNextSiblingOfparent(fiber) {
   } else if (fiber.parent) return findNextSiblingOfparent(fiber.parent);
 }
 function update() {
-  nextfiberOfUnit = {
-    dom: currentRoot.dom,
-    props: currentRoot.props,
-    alternate: currentRoot,
-  };
+  let currentFiber = wipFiber;
+  return () => {
+    wipRoot = {
+      ...currentFiber,
+      alternate: currentFiber,
+    };
+    // wiproot = {
+    //   dom: currentRoot.dom,
+    //   props: currentRoot.props,
+    //   alternate: currentRoot,
+    // };
 
-  wipRoot = nextfiberOfUnit;
+     nextWorkOfUnit=wipRoot;
+  };
 }
 const React = {
   update,
