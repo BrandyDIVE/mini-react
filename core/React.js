@@ -60,9 +60,37 @@ requestIdleCallback(workLoop);
 function commitRoot() {
   deletions.forEach(commitDeletion);
   commitWork(wipRoot.child);
+  commitEffectHooks()
   currentRoot = wipRoot;
   wipRoot = null;
   deletions = [];
+}
+function commitEffectHooks(){
+function run(fiber){
+  if(!fiber) return
+  if(!fiber.alternate){
+    fiber.effectHooks?.forEach((hook)=>{
+      hook.callback()
+    })
+    //初始化 init
+    fiber.effectHook?.callback()
+  }else{
+    //update
+    //deps 有没有发生改变
+    fiber.effectHooks?.forEach((newHook,index)=>{
+    const oldEffectHook=fiber.alternate?.effectHooks[index]
+    //some
+   const needUpdate= oldEffectHook?.deps.some((oldDep,i)=>{
+      return oldDep!==newHook.deps[i]
+    })
+    needUpdate &&  newHook?.callback()
+  })
+}
+
+  run(fiber.child)
+  run(fiber.sibling)
+}
+run(wipRoot)
 }
 function commitDeletion(fiber) {
   if (fiber.dom) {
@@ -191,6 +219,7 @@ function reconcileChildren(fiber, children) {
 function updateFunctionComponent(fiber) {
   stateHooks=[]
   stateHookIndex=0
+  effectHooks=[]
   wipFiber = fiber;
 
   const children = [fiber.type(fiber.props)];
@@ -280,8 +309,18 @@ if(eagerState===stateHook.state) return
   }
   return [stateHook.state,setState]
 }
+let effectHooks
+function useEffect(callback,deps){
+  const effectHook={
+    callback,
+    deps
+  }
+  effectHooks.push(effectHook)
+  wipFiber.effectHooks=effectHooks
+}
 const React = {
   useState,
+  useEffect,
   update,
   render,
   createElement,
