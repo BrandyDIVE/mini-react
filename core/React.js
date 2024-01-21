@@ -39,7 +39,7 @@ function render(el, container) {
 let wipRoot = null;
 let currentRoot = null;
 let nextfiberOfUnit = null;
-let deletions=[]
+let deletions = [];
 function workLoop(deadline) {
   let shouldYield = false;
   while (!shouldYield && nextfiberOfUnit) {
@@ -54,22 +54,22 @@ function workLoop(deadline) {
 }
 requestIdleCallback(workLoop);
 function commitRoot() {
-  deletions.forEach(commitDeletion)
+  deletions.forEach(commitDeletion);
   commitWork(wipRoot.child);
   currentRoot = wipRoot;
   wipRoot = null;
-  deletions=[]
+  deletions = [];
 }
-function commitDeletion(fiber){
-  if(fiber.dom){
+function commitDeletion(fiber) {
+  if (fiber.dom) {
     let fiberParent = fiber.parent;
     while (!fiberParent.dom) {
       fiberParent = fiberParent.parent;
     }
-    fiberParent.dom.removeChild(fiber.dom)
-  }else{
+    fiberParent.dom.removeChild(fiber.dom);
+  } else {
     //当删除的是function component的情况
-    commitDeletion(fiber.child)
+    commitDeletion(fiber.child);
   }
 }
 function commitWork(fiber) {
@@ -78,14 +78,13 @@ function commitWork(fiber) {
   while (!fiberParent.dom) {
     fiberParent = fiberParent.parent;
   }
-  if(fiber.effectTag==='update'){
-updateProps(fiber.dom,fiber.props,fiber.alternate?.props)
-  }else if(fiber.effectTag==='placement'){
+  if (fiber.effectTag === "update") {
+    updateProps(fiber.dom, fiber.props, fiber.alternate?.props);
+  } else if (fiber.effectTag === "placement") {
     if (fiber.dom) {
       fiberParent.dom.append(fiber.dom);
     }
   }
-
 
   commitWork(fiber.child);
   commitWork(fiber.sibling);
@@ -96,7 +95,7 @@ function createDom(type) {
     ? document.createTextNode("")
     : document.createElement(type);
 }
-function updateProps(dom, nextProps,prevProps) {
+function updateProps(dom, nextProps, prevProps) {
   // Object.keys(props).forEach((key) => {
   //   if (key !== "children") {
   //     if (key.startsWith("on")) {
@@ -107,80 +106,83 @@ function updateProps(dom, nextProps,prevProps) {
   //     }
   //   }
   // });
-  
+
   //1.old 有 new没有 删除
-  Object.keys(prevProps).forEach((key)=>{
-    if(key!=="children"){
-      if(!(key in nextProps)){
-        dom.removeAttribute(key)
+  Object.keys(prevProps).forEach((key) => {
+    if (key !== "children") {
+      if (!(key in nextProps)) {
+        dom.removeAttribute(key);
       }
     }
-  })
+  });
   //2.new 有 old 没有 添加
   //3.new 有 old 有 修改
-  Object.keys(nextProps).forEach((key)=>{
-    if(key!=="children"){
-      if(nextProps[key]!==prevProps[key]){
+  Object.keys(nextProps).forEach((key) => {
+    if (key !== "children") {
+      if (nextProps[key] !== prevProps[key]) {
         if (key.startsWith("on")) {
           const eventType = key.slice(2).toLowerCase();
           dom.removeEventListener(eventType, prevProps[key]);
           dom.addEventListener(eventType, nextProps[key]);
-
         } else {
           dom[key] = nextProps[key];
         }
       }
-
     }
-  })
+  });
 }
 function reconcileChildren(fiber, children) {
-  let oldFiber=fiber.alternate?.child
+  let oldFiber = fiber.alternate?.child;
   let prevChild = null;
   children.forEach((child, index) => {
-    const isSameType=oldFiber && oldFiber.type===child.type
-    let newfiber
-    if(isSameType){
+    const isSameType = oldFiber && oldFiber.type === child.type;
+    let newfiber;
+    if (isSameType) {
       //update
-       newfiber = {
+      newfiber = {
         type: child.type,
         props: child.props,
         child: null,
         parent: fiber,
         sibling: null,
         dom: oldFiber.dom,
-        effectTag:"update",
-        alternate:oldFiber
+        effectTag: "update",
+        alternate: oldFiber,
       };
-    }else{
+    } else {
       //create
-   newfiber = {
-        type: child.type,
-        props: child.props,
-        child: null,
-        parent: fiber,
-        sibling: null,
-        dom: null,
-        effectTag:"placement"
-      };
-      if(oldFiber){
-        deletions.push(oldFiber)
+      if (child) {
+        newfiber = {
+          type: child.type,
+          props: child.props,
+          child: null,
+          parent: fiber,
+          sibling: null,
+          dom: null,
+          effectTag: "placement",
+        };
       }
-      
+
+      if (oldFiber) {
+        deletions.push(oldFiber);
+      }
     }
- if(oldFiber){
-  oldFiber=oldFiber.sibling
- }
+    if (oldFiber) {
+      oldFiber = oldFiber.sibling;
+    }
     if (index === 0) {
       fiber.child = newfiber;
     } else {
       prevChild.sibling = newfiber;
     }
-    prevChild = newfiber;
+    if(newfiber){
+      prevChild = newfiber;
+    }
+   
   });
-  while(oldFiber){
-    deletions.push(oldFiber)
-    oldFiber=oldFiber.sibling
+  while (oldFiber) {
+    deletions.push(oldFiber);
+    oldFiber = oldFiber.sibling;
   }
 }
 function updateFunctionComponent(fiber) {
@@ -195,7 +197,7 @@ function updateHostComponent(fiber) {
     const dom = (fiber.dom = createDom(fiber.type));
 
     // 2.处理props
-    updateProps(dom, fiber.props,{});
+    updateProps(dom, fiber.props, {});
   }
   const children = fiber.props.children;
 
@@ -229,7 +231,7 @@ function update() {
   nextfiberOfUnit = {
     dom: currentRoot.dom,
     props: currentRoot.props,
-    alternate:currentRoot
+    alternate: currentRoot,
   };
 
   wipRoot = nextfiberOfUnit;
